@@ -9,7 +9,7 @@
 * Skapa en användare och logga in
 * Göra en profilsida
 * Skapa, Redigera, Ta bort inlägg
-  * Inägg kan ha text och bilder
+  * Inlägg kan ha text och bilder
 * Läsa andra användares inlägg
 
 ## Hur ser den ut?
