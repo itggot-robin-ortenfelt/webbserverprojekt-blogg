@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'slim'
 require 'sqlite3'
+require 'byebug'
 enable :sessions
 
 
@@ -8,27 +9,33 @@ get('/')do
     slim(:index)
 end
 
+get('/login') do
+    slim(:login)
+end
+
 post ('/login') do
-    db = SQLite3::Database.new('db/db.db')
+    db = SQLite3::Database.new('db/bloggDatabase.db')
     db.results_as_hash = true
-    result = db.execute("SELECT username, password FROM users WHERE users.username = (?)",params[:username])
+    result = db.execute("SELECT username, password, userId FROM Users WHERE users.username = (?)",params[:username])
     array = result[0] 
+    userId = array[2]
     if array == nil
         redirect('/')
     elsif params[:username] == array[0] && params[:password] == array[1]
-            session[:loggedin] = true     
-            redirect('/logined')
+            session[:loggedin] = true    
+            redirect("/profile/#{userId}")
     else
         redirect('/nono')
     end
     
 end
 
-get('/logined') do
+get('/profile/:userId') do
     if session[:loggedin] != true
         redirect('/nono')
     elsif session[:username] == params[:username]
-        slim(:logined)
+        @user = params["userId"]
+        slim(:profile)
     else 
         redirect('/nono')
     end
@@ -39,12 +46,27 @@ get('/nono') do
 end
 
 post ('/regNew') do 
-    db = SQLite3::Database.new('db/db.db')
-    db.execute("INSERT INTO users(username, password) VALUES((?), (?))",params[:reg_username], params[:reg_password])
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.execute("INSERT INTO Users(username, password, email, parti) VALUES((?), (?), (?), (?))",params[:reg_username], params[:reg_password], params[:reg_email], params[:reg_parti])
     
     redirect('/')
 end
 
-get ('/reg')do
-    slim(:reg)
+get ('/register')do
+    slim(:register)
 end
+
+post ('/newPost') do
+    # anslut till db
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.results_as_hash = true
+    
+    # plocka up parametrana från formuläret
+    text = params["text"]
+
+    # skicka data tilldatabas med sql
+   
+    
+    # redirect till get
+    redirect('/profile/:userId')
+    end
