@@ -18,11 +18,14 @@ post ('/login') do
     db.results_as_hash = true
     result = db.execute("SELECT username, password, userId FROM Users WHERE users.username = (?)",params[:username])
     array = result[0] 
-    userId = array[2]
+
     if array == nil
         redirect('/')
-    elsif params[:username] == array[0] && params[:password] == array[1]
-            session[:loggedin] = true    
+    end
+    userId = array[2]
+    if params[:username] == array[0] && params[:password] == array[1]
+            session[:loggedin] = true   
+            session[:user_id] = userId   
             redirect("/profile/#{userId}")
     else
         redirect('/nono')
@@ -31,14 +34,21 @@ post ('/login') do
 end
 
 get('/profile/:userId') do
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.results_as_hash = true 
     if session[:loggedin] != true
         redirect('/nono')
     elsif session[:username] == params[:username]
-        @user = params["userId"]
-        slim(:profile)
+        result = db.execute("SELECT title, text FROM posts WHERE posts.userId = (?)", session[:user_id])
+        slim(:profile, locals:{posts: result})
+        
     else 
         redirect('/nono')
     end
+end
+
+get('/mainPage') do
+    slim(:mainpage)
 end
 
 get('/nono') do
@@ -59,14 +69,18 @@ end
 post ('/newPost') do
     # anslut till db
     db = SQLite3::Database.new('db/bloggDatabase.db')
-    db.results_as_hash = true
-    
+    db.results_as_hash = true 
     # plocka up parametrana från formuläret
+    title = params["title"]
     text = params["text"]
-
     # skicka data tilldatabas med sql
-   
-    
+    db.execute("INSERT INTO posts (text, title, userId) VALUES (?,?,?)",text,title, session[:user_id])
     # redirect till get
+   
     redirect('/profile/:userId')
-    end
+end
+
+post ('/logout') do
+    session.destroy
+    redirect('/')
+end
