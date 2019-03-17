@@ -16,3 +16,20 @@ form action="/newPost" method="POST"
     article
         h2 = post["title"]
         p = post ["text"]
+
+
+       
+
+    - if post["id"] == session["edit"].to_i
+        form action="/editPostNew/#{post["id"]}" method="POST"
+            input name="text" placeholder="type something" type="text"
+            input name="title" placeholder="Title" type="text"
+            input value="submit" type="submit"
+
+    -else
+        
+        form action="/deletePost/#{post["id"]}" method="POST"
+            input value="delete" type="submit"
+
+        form action="/editPost/#{post["id"]}" method="POST"
+            input value="edit" type="submit"

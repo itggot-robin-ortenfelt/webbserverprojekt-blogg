@@ -39,8 +39,9 @@ get('/profile/:userId') do
     if session[:loggedin] != true
         redirect('/nono')
     elsif session[:username] == params[:username]
-        result = db.execute("SELECT title, text FROM posts WHERE posts.userId = (?)", session[:user_id])
-        slim(:profile, locals:{posts: result})
+        result = db.execute("SELECT title, text, id FROM posts WHERE posts.userId = (?)", session[:user_id])
+        result_reverse = result.reverse
+        slim(:profile, locals:{posts: result_reverse})
         
     else 
         redirect('/nono')
@@ -75,6 +76,7 @@ post ('/newPost') do
     text = params["text"]
     # skicka data tilldatabas med sql
     db.execute("INSERT INTO posts (text, title, userId) VALUES (?,?,?)",text,title, session[:user_id])
+    
     # redirect till get
    
     redirect('/profile/:userId')
@@ -83,4 +85,25 @@ end
 post ('/logout') do
     session.destroy
     redirect('/')
+end
+
+post ('/deletePost/:postid') do
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.results_as_hash = true
+    db.execute("DELETE FROM posts WHERE id = (?)", params["postid"])  
+    redirect('/profile/:userId')
+end
+
+post('/editPost/:postid') do
+    session["edit"] = params["postid"]
+    redirect('/profile/:userId')
+end
+
+post('/editPostNew/:postid') do
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.results_as_hash = true
+    
+    db.execute("UPDATE posts SET title = (?), text = (?) WHERE id = (?)", params['title'], params['text'], session['edit']) #KOlla så DETA FUNgerar i DB 
+    session["edit"] = nil
+    redirect('/profile/:userId')
 end
