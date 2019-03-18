@@ -3,6 +3,7 @@ require 'slim'
 require 'sqlite3'
 require 'byebug'
 enable :sessions
+require 'bcrypt'
 
 
 get('/')do
@@ -18,12 +19,13 @@ post ('/login') do
     db.results_as_hash = true
     result = db.execute("SELECT username, password, userId FROM Users WHERE users.username = (?)",params[:username])
     array = result[0] 
-
+    password =  params[:password]
+    db_password = array[1]
     if array == nil
         redirect('/')
     end
     userId = array[2]
-    if params[:username] == array[0] && params[:password] == array[1]
+    if params[:username] == array[0] && BCrypt::Password.new(db_password) == password
             session[:loggedin] = true   
             session[:user_id] = userId   
             redirect("/profile/#{userId}")
@@ -49,7 +51,11 @@ get('/profile/:userId') do
 end
 
 get('/mainPage') do
-    slim(:mainpage)
+    db = SQLite3::Database.new('db/bloggDatabase.db')
+    db.results_as_hash = true 
+    result = db.execute("SELECT title, text, id FROM posts")
+    result_reverse = result.reverse
+    slim(:mainPage, locals:{posts: result_reverse})
 end
 
 get('/nono') do
@@ -57,8 +63,10 @@ get('/nono') do
 end
 
 post ('/regNew') do 
+    password =  params[:reg_password]
+    hashat_password = BCrypt::Password.create(password)
     db = SQLite3::Database.new('db/bloggDatabase.db')
-    db.execute("INSERT INTO Users(username, password, email, parti) VALUES((?), (?), (?), (?))",params[:reg_username], params[:reg_password], params[:reg_email], params[:reg_parti])
+    db.execute("INSERT INTO Users(username, password, email, parti) VALUES((?), (?), (?), (?))",params[:reg_username],  hashat_password, params[:reg_email], params[:reg_parti])
     
     redirect('/')
 end
